@@ -27,18 +27,22 @@ theta_0 = 0;
 dz_0 = 0;
 dtheta_0 = 0;
 
+x_0 = [z_0; theta_0; dz_0; dtheta_0];
+
 % Std deviations initial conditions
 std_dev.z_0 = 0.001;
 std_dev.theta_0 = 0.001;
 std_dev.dz_0 = 0.001;
 std_dev.dtheta_0 = 0.001;
-P_0 = zeros(4);%blkdiag(std_dev.z_0^2, std_dev.theta_0^2, std_dev.dz_0^2, std_dev.dtheta_0^2);
+P_0 = blkdiag(std_dev.z_0^2, std_dev.theta_0^2, std_dev.dz_0^2, std_dev.dtheta_0^2);
 
 % Real initial condition
-x_0 = [z_0+std_dev.z_0*randn(1,1);...
-    theta_0+std_dev.theta_0*randn(1,1);...
-    dz_0+std_dev.dz_0*randn(1,1);...
-    dtheta_0+std_dev.dtheta_0*rand(1,1)];
+z_0_real = z_0+std_dev.z_0*randn(1,1);
+theta_0_real = theta_0+std_dev.theta_0*randn(1,1);
+dz_0_real = dz_0+std_dev.dz_0*randn(1,1);
+dtheta_0_real = dtheta_0+std_dev.dtheta_0*rand(1,1);
+
+x_0_real = [z_0_real; theta_0_real; dz_0_real; dtheta_0_real];
 
 %% Ideal System params
 
@@ -51,21 +55,23 @@ s_param.l = 10;       % [m]
 
 %% Input parameters
 
-std_dev.fm = 0.01;                          % fm standard deviation
-std_dev.fa = 0.01;                          % fa standard deviation 
+std_dev.fm = 500;                          % fm standard deviation
+std_dev.fa = 1;                          % fa standard deviation 
 Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
 U_mean= [0; 0];                             % Mean disturbe process
 
 %% Linear sys
 
 % Working point
-z_w = 0;
+z_w = 20;
 theta_w = 0;
 dz_w = 0;
 dtheta_w = 0;
 
-fm_w = 1;
-fa_w = 1;
+x_w = [z_w; theta_w; dz_w; dtheta_w];
+
+fm_w = s_param.g*s_param.m;
+fa_w = 0;
 
 % State space matrix
 A = [0 0 1 0;...
@@ -88,7 +94,7 @@ lin_sys = ss(A,B,C,D);
 %% Kalman filter
 
 % Selector param
-KALMAN_FILTER = true;       % True for KF, false for UKF
+KALMAN_FILTER = false;       % True for KF, false for UKF
 
 % KF matrix
 [~, Kf] = kalman(lin_sys, Q,R);
