@@ -19,20 +19,26 @@ std_dev.y2 = 0.09;  %[rad]
 % Sensors covariance R
 R = blkdiag(std_dev.y1^2, std_dev.y2^2);
 
-%% Ideal Initial conditions
+%% Initial conditions
 
+% Ideal initial conditions
 z_0 = 0;
 theta_0 = 0;
 dz_0 = 0;
 dtheta_0 = 0;
 
-%% Std deviations initial conditions
-
+% Std deviations initial conditions
 std_dev.z_0 = 0.001;
 std_dev.theta_0 = 0.001;
 std_dev.dz_0 = 0.001;
 std_dev.dtheta_0 = 0.001;
 P_0 = zeros(4);%blkdiag(std_dev.z_0^2, std_dev.theta_0^2, std_dev.dz_0^2, std_dev.dtheta_0^2);
+
+% Real initial condition
+x_0 = [z_0+std_dev.z_0*randn(1,1);...
+    theta_0+std_dev.theta_0*randn(1,1);...
+    dz_0+std_dev.dz_0*randn(1,1);...
+    dtheta_0+std_dev.dtheta_0*rand(1,1)];
 
 %% Ideal System params
 
@@ -58,8 +64,8 @@ theta_w = 0;
 dz_w = 0;
 dtheta_w = 0;
 
-fm_w = 0;
-fa_w = 0;
+fm_w = 1;
+fa_w = 1;
 
 % State space matrix
 A = [0 0 1 0;...

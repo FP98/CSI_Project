@@ -19,20 +19,24 @@ std_dev.y2 = 0.09;  %[rad]
 % Sensors covariance R
 R = blkdiag(std_dev.y1^2, std_dev.y2^2);
 
-%% Ideal Initial conditions
+%% Initial conditions
 
+% Ideal initial conditions
 z_0 = 0;
 theta_0 = 0;
 dz_0 = 0;
 dtheta_0 = 0;
 
-%% Std deviations initial conditions
-
+% Std deviations initial conditions
 std_dev.z_0 = 0.001;
 std_dev.theta_0 = 0.001;
 std_dev.dz_0 = 0.001;
 std_dev.dtheta_0 = 0.001;
 P_0 = zeros(4);%blkdiag(std_dev.z_0^2, std_dev.theta_0^2, std_dev.dz_0^2, std_dev.dtheta_0^2);
+
+% Real initial condition
+x_0 = [z_0+std_dev.z0*randn(1,1);...
+    theta_0+std_dev.];
 
 %% Ideal System params
 
@@ -75,7 +79,7 @@ B = [0 0;...
 C = [1 0 0 0;...
     0 1 0 0];
 
-D = [0; 0];
+D = zeros(2,2);
 
 lin_sys = ss(A,B,C,D);
 
@@ -85,7 +89,7 @@ lin_sys = ss(A,B,C,D);
 KALMAN_FILTER = true;       % True for KF, false for UKF
 
 % KF matrix
-
+[~, Kf] = kalman(lin_sys, Q,R);
 
 % UKF param
 dt = 0.001;                 % [s] Sampling time of UKF
