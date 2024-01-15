@@ -14,7 +14,7 @@ Ts.y2 = 0.04;       %[s]
 
 % Std deviation
 std_dev.y1 = 0.07;      %[m]
-std_dev.y2 = 0.09;  %[rad]
+std_dev.y2 = 0.09;      %[rad]
 
 % Sensors covariance R
 R = blkdiag(std_dev.y1^2, std_dev.y2^2);
@@ -22,7 +22,7 @@ R = blkdiag(std_dev.y1^2, std_dev.y2^2);
 %% Initial conditions
 
 % Ideal initial conditions
-z_0 = 0;
+z_0 = 200;
 theta_0 = 0;
 dz_0 = 0;
 dtheta_0 = 0;
@@ -72,7 +72,7 @@ Tm2 = 1;            % [s] Time constant fa
 %% Linear sys
 
 % Working point
-z_w = 20;
+z_w = 400;
 theta_w = 0;
 dz_w = 0;
 dtheta_w = 0;
@@ -83,18 +83,18 @@ fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
 % Symbolic matrix calculation
-Get_A_matrix
-Get_B_matrix
+% Get_A_matrix
+% Get_B_matrix
 
 % State space matrix  CI SONO DEGLI ERRORI
 A = [0 0 1 0;...
     0 0 0 1;...
-    -s_param.b/s_param.m -fm_w*sin(theta_w)/s_param.m 0 0;...
+    0 -fm_w*sin(theta_w)/s_param.m -s_param.b/s_param.m 0;...
     0 0 0 -s_param.b/s_param.J];
 
 B = [0 0;...
     0 0;...
-    cos(theta_w) 0;
+    cos(theta_w)/s_param.m 0;
     0 2*s_param.l/s_param.J];                   % u = [fm;fa]
 
 C = [1 0 0 0;...
@@ -119,6 +119,7 @@ dt = 0.001;                 % [s] Sampling time of UKF
 m_treshold = 5;
 
 %% LQR Control
+
 % Weights matrix
 Q_lqr = blkdiag(1e3,1000,10,10);     % Status weight
 R_lqr = eye(2);     % Inputs weight
