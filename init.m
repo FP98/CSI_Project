@@ -61,14 +61,25 @@ Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
 U_mean= [0; 0];                             % Mean disturbe process
 
 % Ideal parameters of the actuators transfer functions
+Km1 = 1.1;      % [N] Gain fm
+Km2 = 1.1;      % [N] Gain fa
+T1 = 0.05;      % [s] Delay fm
+T2 = 0.15;      % [s] Delay fa
+Tm1 = 1;        % [s] Time constant fm
+Tm2 = 1;        % [s] Time constant fa
 
-Km1 = 1.1;          % [N] Gain fm
-Km2 = 1.1;          % [N] Gain fa
-T1 = 0.05;           % [s] Delay fm
-T2 = 0.15;          % [s] Delay fa
-Tm1 = 1;           % [s] Time constant fm
-Tm2 = 1;            % [s] Time constant fa
+% Std dev parameters actuator transfer function
+std_dev_Km = 0.01;      % [N]
+std_dev_T = 0.01;       % [s]
+std_dev_Tm = 0.01;      % [s]
 
+% Real parameters of the actuators transfer functions
+Km1_real = Km1 + std_dev_Km*randn(1,1);     % [N] Gain fm
+Km2_real = Km2 + std_dev_Km*randn(1,1);     % [N] Gain fa
+T1_real = T1 + std_dev_T*randn(1,1);        % [s] Delay fm
+T2_real = T2 + std_dev_T*randn(1,1);        % [s] Delay fa
+Tm1_real = Tm1 + std_dev_Tm*randn(1,1);     % [s] Time constant fm
+Tm2_real = Tm2 + std_dev_Tm*randn(1,1);     % [s] Time constant fa
 %% Linear sys
 
 % Working point
