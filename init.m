@@ -124,8 +124,8 @@ m_treshold = 5;
 Q_lqr = blkdiag(1e3,1000,10,10);     % Status weight
 R_lqr = eye(2);     % Inputs weight
 
-A1 = A_matrix(x_w', fm_w, fa_w);
-B1 = B_matrix(x_w', fm_w, fa_w);
+%A1 = A_matrix(x_w', fm_w, fa_w);
+%B1 = B_matrix(x_w', fm_w, fa_w);
 
-K_lqr = - lqr(A1,B1,Q_lqr,R_lqr);
+K_lqr = - lqr(A,B,Q_lqr,R_lqr);
 
