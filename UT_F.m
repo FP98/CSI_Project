@@ -4,7 +4,7 @@ function [p_mean, propagated_cov] = UT_F(x_mean, sigma_x, dt, fm, fa, s_param, Q
 J = s_param.J;     
 m = s_param.m;     
 b = s_param.b;      
-beta = s_param.beta;    
+beta_ = s_param.beta;    
 g = s_param.g;     
 l = s_param.l;  
 
@@ -66,7 +66,7 @@ for i = 1:size(sigma_points,2)
         [dz;...
         dtheta;...
         (-b/m * dz + (fm + U(1))/m * cos(theta) -g);...
-        (-beta/J * dtheta + 2 * l/J * (fa + U(2)))];
+        (-beta_/J * dtheta + 2 * l/J * (fa + U(2)))];
 end
 
 % Propagated mean

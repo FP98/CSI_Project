@@ -55,10 +55,19 @@ s_param.l = 10;       % [m]
 
 %% Input parameters
 
-std_dev.fm = 500;                          % fm standard deviation
-std_dev.fa = 1;                          % fa standard deviation 
+std_dev.fm = 500;                           % fm standard deviation
+std_dev.fa = 1;                             % fa standard deviation 
 Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
 U_mean= [0; 0];                             % Mean disturbe process
+
+% Ideal parameters of the actuators transfer functions
+
+Km1 = 1.1;          % [N] Gain fm
+Km2 = 1.1;          % [N] Gain fa
+T1 = 0.05;           % [s] Delay fm
+T2 = 0.15;          % [s] Delay fa
+Tm1 = 1;           % [s] Time constant fm
+Tm2 = 1;            % [s] Time constant fa
 
 %% Linear sys
 
@@ -73,7 +82,11 @@ x_w = [z_w; theta_w; dz_w; dtheta_w];
 fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
-% State space matrix
+% Symbolic matrix calculation
+Get_A_matrix
+Get_B_matrix
+
+% State space matrix  CI SONO DEGLI ERRORI
 A = [0 0 1 0;...
     0 0 0 1;...
     -s_param.b/s_param.m -fm_w*sin(theta_w)/s_param.m 0 0;...
@@ -104,3 +117,14 @@ KALMAN_FILTER = true;       % True for KF, false for UKF
 % UKF param
 dt = 0.001;                 % [s] Sampling time of UKF
 m_treshold = 5;
+
+%% LQR Control
+% Weights matrix
+Q_lqr = blkdiag(1e3,1000,10,10);     % Status weight
+R_lqr = eye(2);     % Inputs weight
+
+A1 = A_matrix(x_w', fm_w, fa_w);
+B1 = B_matrix(x_w', fm_w, fa_w);
+
+K_lqr = - lqr(A1,B1,Q_lqr,R_lqr);
+
