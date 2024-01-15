@@ -1,4 +1,4 @@
-function [y, Cov_y, cross_cov] = UT_H(x_mean, sigma_x)
+function [y, Cov_y, cross_cov] = UT_H(x_mean, sigma_x,C)
 
 
 % Define parameters
@@ -53,7 +53,7 @@ for i = 1:size(sigma_points,2)
     dtheta = sigma_points(4,i);
     
     % h(sigma_points)
-    prop_sigma_points(:,i) = [1 0 0 0; 0 1 0 0]*[z; theta; dz; dtheta];
+    prop_sigma_points(:,i) = C*[z; theta; dz; dtheta];
 end
 
 

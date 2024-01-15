@@ -94,7 +94,7 @@ lin_sys = ss(A,B,C,D);
 %% Kalman filter
 
 % Selector param
-KALMAN_FILTER = false;       % True for KF, false for UKF
+KALMAN_FILTER = true;       % True for KF, false for UKF
 
 % KF matrix
 [~, Kf] = kalman(lin_sys, Q,R);
