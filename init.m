@@ -93,11 +93,15 @@ x_w = [z_w; theta_w; dz_w; dtheta_w];
 fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
-% Symbolic matrix calculation
-% Get_A_matrix
-% Get_B_matrix
+%% Symbolic matrix calculation
+% Normal matrix
+Get_A_matrix
+Get_B_matrix
 
-% State space matrix  CI SONO DEGLI ERRORI
+% Augmented matrix
+Get_A_a_matrix
+Get_B_a_matrix
+%% State space matrix
 A = [0 0 1 0;...
     0 0 0 1;...
     0 -fm_w*sin(theta_w)/s_param.m -s_param.b/s_param.m 0;...
@@ -133,10 +137,21 @@ m_treshold = 5;
 
 % Weights matrix
 Q_lqr = blkdiag(1e3,1000,10,10);     % Status weight
-R_lqr = eye(2);     % Inputs weight
+R_lqr = 0.5*eye(2);     % Inputs weight
 
 %A1 = A_matrix(x_w', fm_w, fa_w);
 %B1 = B_matrix(x_w', fm_w, fa_w);
 
 K_lqr = - lqr(A,B,Q_lqr,R_lqr);
 
+%% LQR Control with integral 
+% x_a = [iz itheta z theta dz dtheta]
+x_a_w = [0;0;x_w];  
+% Augmented Weights matrix
+Q_a_lqr = blkdiag(1,1,1e3,1000,10,10);     % Status weight
+R_a_lqr = 1000*eye(2);     % Inputs weight
+
+A_a = A_a_matrix(x_a_w', fm_w, fa_w);
+B_a = B_a_matrix(x_a_w', fm_w, fa_w);
+
+K_a_lqr = - lqr(A_a,B_a,Q_a_lqr,R_a_lqr);
