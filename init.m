@@ -87,9 +87,11 @@ B = [0 0;...
 C = [1 0 0 0;...
     0 1 0 0];
 
-D = zeros(2,2);
+Bnoise = eye(4);
 
-lin_sys = ss(A,B,C,D);
+D = zeros(2,6);
+
+lin_sys = ss(A,[B Bnoise],C,D);
 
 %% Kalman filter
 
