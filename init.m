@@ -22,7 +22,7 @@ R = blkdiag(std_dev.y1^2, std_dev.y2^2);
 
 % Ideal initial conditions
 z_0 = 200;
-theta_0 = pi/6;
+theta_0 = 0;
 dz_0 = 0;
 dtheta_0 = 0;
 
