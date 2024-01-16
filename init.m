@@ -5,7 +5,6 @@ clc
 %% Sample time of simulation
 
 out_rate = 0.001;   %[s]
-
 %% Sensors carateristics
 
 % Sampling times
@@ -23,7 +22,7 @@ R = blkdiag(std_dev.y1^2, std_dev.y2^2);
 
 % Ideal initial conditions
 z_0 = 200;
-theta_0 = 0;
+theta_0 = pi/6;
 dz_0 = 0;
 dtheta_0 = 0;
 
@@ -56,7 +55,7 @@ s_param.l = 10;       % [m]
 %% Input parameters
 
 std_dev.fm = 500;                           % fm standard deviation
-std_dev.fa = 1;                             % fa standard deviation 
+std_dev.fa = 10;                             % fa standard deviation 
 Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
 U_mean= [0; 0];                             % Mean disturbe process
 
@@ -128,8 +127,8 @@ m_treshold = 5;
 %% LQR Control
 
 % Weights matrix
-Q_lqr = blkdiag(1e3,1000,10,10);     % Status weight
-R_lqr = 0.5*eye(2);     % Inputs weight
+Q_lqr = blkdiag(1000,1000,100,100);     % Status weight
+R_lqr = blkdiag(0.001,1);     % Inputs weight
 
 K_lqr = - lqr(A,B,Q_lqr,R_lqr);
 
@@ -143,8 +142,8 @@ Get_B_a_matrix
 x_a_w = [0;0;x_w]; 
 
 % Augmented Weights matrix
-Q_a_lqr = blkdiag(1,1,1e3,1000,10,10);     % Status weight
-R_a_lqr = 1000*eye(2);     % Inputs weight
+Q_a_lqr = blkdiag(10,10,100,10,100,10);     % Status weight
+R_a_lqr = blkdiag(0.001,10);     % Inputs weight
 
 A_a = A_a_matrix(x_a_w', fm_w, fa_w);
 B_a = B_a_matrix(x_a_w', fm_w, fa_w);
