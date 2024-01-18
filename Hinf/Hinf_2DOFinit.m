@@ -104,4 +104,4 @@ K_fsf = -place(A,B,[-0.01 -0.01 -0.5 -0.5]);
 Acl = A+B*K_fsf;
 
 %% Hinf controller
-Hinf_computation;
+Hinf_2DOFcomputation;
