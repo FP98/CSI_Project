@@ -2,6 +2,8 @@
 clear
 clc
 
+CORRECTION = false;
+
 %% Sample time of simulation
 
 out_rate = 0.001;   %[s]
@@ -57,8 +59,8 @@ s_param.l = 10;       % [m]
 
 std_dev.fm = 500;                           % fm standard deviation
 std_dev.fa = 10;                             % fa standard deviation 
-Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
-U_mean= [0; 0];                             % Mean disturbe process
+% Q = blkdiag(std_dev.fm^2, std_dev.fa^2);    % Disturbe process covariance
+% U_mean= [0; 0];                             % Mean disturbe process
 
 % Ideal parameters of the actuators transfer functions
 Km1 = 1.1;      % [N] Gain fm
@@ -80,10 +82,11 @@ T1_real = T1 + std_dev_T*randn(1,1);        % [s] Delay fm
 T2_real = T2 + std_dev_T*randn(1,1);        % [s] Delay fa
 Tm1_real = Tm1 + std_dev_Tm*randn(1,1);     % [s] Time constant fm
 Tm2_real = Tm2 + std_dev_Tm*randn(1,1);     % [s] Time constant fa
+
 %% Linear sys
 
 % Working point
-z_w = 200;
+z_w = 400;
 theta_w = 0;
 dz_w = 0;
 dtheta_w = 0;
@@ -93,9 +96,106 @@ x_w = [z_w; theta_w; dz_w; dtheta_w];
 fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
-%% State space matrix
+%% System representation
 
-A = A_matrix(x_w',fm_w,fa_w);       % x = [z;theta;dz;dtheta]
-B = B_matrix(x_w',fm_w,fa_w);       % u = [fm;fa]
+% x = [z;theta;dz;dtheta]
+A = [0 0 1 0;...
+    0 0 0 1;...
+    0 -fm_w*sin(theta_w)/s_param.m -s_param.b/s_param.m 0;...
+    0 0 0 -s_param.b/s_param.J];
+
+% u = [fm;fa]
+B = [0 0;...
+    0 0;...
+    cos(theta_w)/s_param.m 0;
+    0 2*s_param.l/s_param.J];
+
 C = [1 0 0 0; 0 1 0 0];
 D = zeros(2,2);
+
+if CORRECTION
+    % Shift eigenvalue from zero
+    A_c = A - 0.01*eye(size(A));
+    s = tf('s');
+    lin_sys = ss(A_c,B,C,D);
+    G1 = tf(lin_sys);
+else
+    % Nominal plant
+    s = tf('s');
+    lin_sys = ss(A,B,C,D);
+    G1 = tf(lin_sys);
+end
+
+% Delay approximation
+delay1= tf(exp(-T1*s));
+delay2= tf(exp(-T2*s));
+sys1 = pade(delay1,2);
+sys2 = pade(delay2,2);
+
+% Input transfer function
+Gm1 = sys1*tf(Km1,[Tm1 1]);    
+Gm2 = sys2*tf(Km2,[Tm2 1]);    
+
+% Global plant (input + plant)
+G = G1*blkdiag(Gm1,Gm2);
+Gd = [blkdiag(tf(1),tf(1)) blkdiag(tf(1),tf(1))];
+
+%% Weights definitions
+M = 1.5;
+A_ =1e-4;
+wb = 10; 
+
+% High pass filters
+w1_11 = tf([1/M wb],[1 wb*A_]);
+w1_22 = tf([1/M wb],[1 wb*A_]);
+
+% Weight matrix
+W1 = blkdiag(w1_11,w1_22);
+W2 = blkdiag(tf(10), tf(10));
+%% Connect P-K
+
+% Input and output of G
+G.u = 'u';
+G.y = 'y1';
+
+% Input and output of Gd
+Gd.u = 'd';
+Gd.y = 'd1';
+
+% Input and output of W1
+W1.u = 'e';
+W1.y = 'z1';
+
+% Input and output of W2
+W2.u = 'u';
+W2.y = 'z2';
+
+% Sum nodes
+S1 = sumblk('e = r - y',2);
+S2 = sumblk('y = y1 + d1',2);       % M0 = I
+
+% Connect
+P = connect(G, Gd, W1, W2, S1, S2, {'r', 'd', 'u'}, {'z1', 'z2', 'e'});
+
+% Matlab command instead of connect (only if hinfsyn = mixsyn)
+% P = augw(G,W1,W2, []);
+
+%% Hyinf syntesis
+if CORRECTION 
+    [K_pre,~, ~] = hinfsyn(P, 2, 2);
+    % Inverse shift
+    K_pre.A = K_pre.A + 0.01*eye(size(K_pre.A));
+    K_non_min = ss(K_pre.A, K_pre.B, K_pre.C, K_pre.D);
+
+    % Min real
+    H = tf(K_non_min);
+    K = ss(H, 'minimal');
+    K = tf(K);
+else
+    [K_ms,CL, gamma] = mixsyn(G, W1, W2, []);
+    K_ms=tf(ss(K_ms.A,K_ms.B,K_ms.C,K_ms.D));
+    
+    opts = hinfsynOptions('Method','RIC');
+    [K,CL, gamma] = hinfsyn(P, 2, 2, opts);
+    K = tf(ss(K.A,K.B,K.C,K.D));
+end
