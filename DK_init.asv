@@ -115,7 +115,7 @@ B = [0 0;...
 C = [1 0 0 0;...
     0 1 0 0];
 
-sys_u = tf(A,B,C,zeros(2,2));
+sys_u = ss(A,B,C,zeros(2,2));
 
 % Input uncertanties param
 Km1_u = ureal('Km1', Km1, 'PlusMin', [-std_dev_Km, std_dev_Km]); 
@@ -130,6 +130,11 @@ s = tf('s');
 % Input tf
 Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
 Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
+% Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
+% Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
+% Unmodeled input dynamics
+% Gm1 = udyn('Gm1', [1 1]);
+% Gm2 = udyn('Gm2', [1 1]);
 
 % % G_u(s) global
 % G_u(1,1) = Gm1*G_u(1,1);
@@ -142,6 +147,6 @@ Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
 %% Nominal model
 
 % System nominal value
-sys_n = usubs(G_u, 'J', s_param.J, 'm', s_param.m,'b', s_param.b, 'beta', s_param.beta,'l', s_param.l, 'Km1', Km1, 'Km2', Km2,'T1', T1, 'T2', T2, 'Tm1', Tm1, 'Tm2', Tm2);
+% sys_n = usubs(G_u, 'J', s_param.J, 'm', s_param.m,'b', s_param.b, 'beta', s_param.beta,'l', s_param.l, 'Km1', Km1, 'Km2', Km2,'T1', T1, 'T2', T2, 'Tm1', Tm1, 'Tm2', Tm2);
 
 

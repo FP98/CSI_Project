@@ -94,6 +94,7 @@ fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
 %% State space matrix
+
 A = A_matrix(x_w',fm_w,fa_w);       % x = [z;theta;dz;dtheta]
 B = B_matrix(x_w',fm_w,fa_w);       % u = [fm;fa]
 C = [1 0 0 0; 0 1 0 0];
