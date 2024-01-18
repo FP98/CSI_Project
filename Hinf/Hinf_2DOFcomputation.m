@@ -2,7 +2,7 @@
 
 % Nominal plant
 s = tf('s');
-lin_sys = ss(A,B,C,D);
+lin_sys = ss(Acl,B,C,D);
 G1 = tf(lin_sys);
 
 % Delay approximation
@@ -20,9 +20,9 @@ G = G1*blkdiag(Gm1,Gm2);
 
 Gd = [G1 eye(2)];
 
-% Weights definitions
+%% Weights definitions
 M = 1.5;
-A_ = 10;
+A_ =10;
 wb = 10; 
 
 % High pass filters
@@ -31,7 +31,7 @@ w1_22 = tf([1/M wb],[1 wb*A_]);
 
 % Weight matrix
 W1 = blkdiag(w1_11,w1_22);
-W2 = blkdiag(tf(1), tf(1));
+W2 = blkdiag(tf(100), tf(100));
 
 %% Connect P-K
 
@@ -59,10 +59,10 @@ S3 = sumblk('e = y - r',2);       % M0 = I
 P = connect(G, Gd, W1, W2, S2, S3, {'r', 'd', 'u'}, {'z1', 'z2', 'r', 'y'});
 Pzpk = zpk(P);
 
-P1 = augw(G,W1,W2,[]);
+%P1 = augw(G,W1,W2,[]);
 
 % Hinf
-[K,CL, gamma] = hinfsyn(P1, 4, 2);
+[K,CL, gamma] = hinfsyn(P, 4, 2);
 
 
 

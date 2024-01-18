@@ -83,7 +83,7 @@ Tm2_real = Tm2 + std_dev_Tm*randn(1,1);     % [s] Time constant fa
 %% Linear sys
 
 % Working point
-z_w = 200;
+z_w = 400;
 theta_w = 0;
 dz_w = 0;
 dtheta_w = 0;
@@ -99,3 +99,9 @@ A = A_matrix(x_w',fm_w,fa_w);       % x = [z;theta;dz;dtheta]
 B = B_matrix(x_w',fm_w,fa_w);       % u = [fm;fa]
 C = [1 0 0 0; 0 1 0 0];
 D = zeros(2,2);
+
+K_fsf = -place(A,B,[-0.01 -0.01 -0.5 -0.5]);
+Acl = A+B*K_fsf;
+
+%% Hinf controller
+Hinf_computation;
