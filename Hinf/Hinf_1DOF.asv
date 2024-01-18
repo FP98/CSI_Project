@@ -127,12 +127,7 @@ W2 = blkdiag(tf(1), tf(1));
 P = augw(G,W1,W2,[]);
 
 % Hinf controller
-[K_pre,~, ~] = hinfsyn(P, 2, 2);
+[K,~, ~] = hinfsyn(P, 2, 2);
 
 % Inverse shift
-K_pre.A = K_pre.A + 0.01*eye(size(K_pre.A));
-K_non_min = ss(K_pre.A, K_pre.B, K_pre.C, K_pre.D);
-
-% Min real
-H = tf(K_non_min);
-K = ss(H, 'minimal');
+K.
