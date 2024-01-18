@@ -62,7 +62,6 @@ Pzpk = zpk(P);
 P1 = augw(G,W1,W2,[]);
 
 % Hinf
-
 [K,CL, gamma] = hinfsyn(P1, 4, 2);
 
 
