@@ -94,6 +94,9 @@ fa_w = 0;
 
 %% Uncertant model
 
+% Inizialise s
+s = tf('s');
+
 % Uncertant param system
 J = ureal('J', s_param.J, 'PlusMinus', [-std_dev.J, std_dev.J]); 
 m = ureal('m', s_param.m, 'PlusMinus', [-std_dev.m, std_dev.m]);
@@ -102,20 +105,22 @@ beta = ureal('beta', s_param.beta, 'PlusMinus',[-std_dev.beta, std_dev.beta]);
 l = ureal('l', s_param.l, 'PlusMinus',[-std_dev.l, std_dev.l]);
 
 % State space matrix system
-A = [0 0 1 0;...
-    0 0 0 1;...
-    0 -fm_w*sin(theta_w)/m -b/m 0;...
-    0 0 0 -beta/J];
+% A = [0 0 1 0;...
+%     0 0 0 1;...
+%     0 -fm_w*sin(theta_w)/m -b/m 0;...
+%     0 0 0 -beta/J];
+% 
+% B = [0 0;...
+%     0 0;...
+%     cos(theta_w)/m 0;
+%     0 2*l/J];                   % u = [fm;fa]
+% 
+% C = [1 0 0 0;...
+%     0 1 0 0];
 
-B = [0 0;...
-    0 0;...
-    cos(theta_w)/m 0;
-    0 2*l/J];                   % u = [fm;fa]
 
-C = [1 0 0 0;...
-    0 1 0 0];
-
-sys_u = ss(A,B,C,zeros(2,2));
+G1 = [1/(s*(b + m*s)) 0;...
+    0 (2*l)/(s*(beta + J*s))];
 
 % Input uncertanties param
 Km1_u = ureal('Km1', Km1, 'PlusMin', [-std_dev_Km, std_dev_Km]); 
@@ -125,29 +130,50 @@ T2_u = ureal('T2', T2, 'PlusMin',[-std_dev_T, std_dev_T]);
 Tm1_u = ureal('Tm1', Tm1, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
 Tm2_u = ureal('Tm2', Tm2, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
 
-s = tf('s');
-
 % Input tf
-Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
-Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
-% Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
-% Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
-% Unmodeled input dynamics
-% Gm1 = udyn('Gm1', [1 1]);
-% Gm2 = udyn('Gm2', [1 1]);
+% Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
+% Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
+Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
+Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
 
+% G_u(s) global
+G = G1*blkdiag(Gm1,Gm2);
 
-% % G_u(s) global
-% G_u(1,1) = Gm1*G_u(1,1);
-% G_u(2,2) = Gm2*G_u(2,2);
+%% Weights definitions
+M = 1.5;
+A_ =1e-4;
+wb = 10; 
 
-% sys_u_t = ss(G_u);
+% High pass filters
+w1_11 = tf([1/M wb],[1 wb*A_]);
+w1_22 = tf([1/M wb],[1 wb*A_]);
 
-[M,Delta,~] = lftdata(sys_u);
+% Weight matrix
+W1 = blkdiag(w1_11,w1_22);
+W2 = blkdiag(tf(0.1), tf(0.1));
 
-%% Nominal model
+%% Connect P-K
 
-% System nominal value
-% sys_n = usubs(G_u, 'J', s_param.J, 'm', s_param.m,'b', s_param.b, 'beta', s_param.beta,'l', s_param.l, 'Km1', Km1, 'Km2', Km2,'T1', T1, 'T2', T2, 'Tm1', Tm1, 'Tm2', Tm2);
+% Input and output of G
+G.u = 'u1';
+G.y = 'y1';
 
+% Input and output of W1
+W1.u = 'e';
+W1.y = 'z1';
 
+% Input and output of W2
+W2.u = 'u';
+W2.y = 'z2';
+
+% Sum nodes
+S1 = sumblk('e = r - y',2);
+S2 = sumblk('u1 = u + d',2);
+S3 = sumblk('y = y1 + n',2);      
+
+% Connect
+P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
+
+%% DK iteration controller
+
+[K,~, ~] = musyn(P,2,2);

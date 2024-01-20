@@ -136,7 +136,7 @@ Gm2 = sys2*tf(Km2,[Tm2 1]);
 
 % Global plant (input + plant)
 G = G1*blkdiag(Gm1,Gm2);
-ss_global = ss(G); 
+G_ss = 
 
 %% Weights definitions
 M = 1.5;
@@ -149,7 +149,7 @@ w1_22 = tf([1/M wb],[1 wb*A_]);
 
 % Weight matrix
 W1 = blkdiag(w1_11,w1_22);
-W2 = blkdiag(tf(0.1), tf(0.1));
+W2 = blkdiag(tf(0.01), tf(0.01));
 
 %% Connect P-K
 
