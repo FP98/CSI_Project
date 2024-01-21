@@ -30,10 +30,10 @@ dtheta_0 = 0;
 x_0 = [z_0; theta_0; dz_0; dtheta_0];
 
 % Std deviations initial conditions
-std_dev.z_0 = 0.001;
-std_dev.theta_0 = 0.001;
-std_dev.dz_0 = 0.001;
-std_dev.dtheta_0 = 0.001;
+std_dev.z_0 = 3;
+std_dev.theta_0 = 0.1;
+std_dev.dz_0 = 1;
+std_dev.dtheta_0 = 0.01;
 P_0 = blkdiag(std_dev.z_0^2, std_dev.theta_0^2, std_dev.dz_0^2, std_dev.dtheta_0^2);
 
 % Real initial condition
@@ -62,11 +62,11 @@ U_mean= [0; 0];                             % Mean disturbe process
 
 % Ideal parameters of the actuators transfer functions
 Km1 = 1.1;      % [N] Gain fm
-Km2 = 1.1;      % [N] Gain fa
+Km2 = 1.5;      % [N] Gain fa
 T1 = 0.05;      % [s] Delay fm
 T2 = 0.15;      % [s] Delay fa
 Tm1 = 1;        % [s] Time constant fm
-Tm2 = 1;        % [s] Time constant fa
+Tm2 = .1;        % [s] Time constant fa
 
 % Std dev parameters actuator transfer function
 std_dev_Km = 0.01;      % [N]
@@ -95,10 +95,11 @@ fm_w = s_param.g*s_param.m;
 fa_w = 0;
 
 %% State space matrix
+
 A = [0 0 1 0;...
     0 0 0 1;...
     0 -fm_w*sin(theta_w)/s_param.m -s_param.b/s_param.m 0;...
-    0 0 0 -s_param.b/s_param.J];
+    0 0 0 -s_param.beta/s_param.J];
 
 B = [0 0;...
     0 0;...
@@ -115,9 +116,6 @@ D = zeros(2,6);
 lin_sys = ss(A,[B Bnoise],C,D);
 
 %% Kalman filter
-
-% Selector param
-KALMAN_FILTER = true;       % True for KF, false for UKF
 
 % KF matrix
 [~, Kf] = kalman(lin_sys, Q,R);
