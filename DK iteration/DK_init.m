@@ -175,5 +175,7 @@ S3 = sumblk('y = y1 + n',2);
 P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
 
 %% DK iteration controller
+[K,gamma] = musyn(P,2,2);
 
-[K,~, ~] = musyn(P,2,2);
+%% MU-analysis
+MU_analysis;
