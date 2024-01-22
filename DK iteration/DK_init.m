@@ -131,10 +131,10 @@ Tm1_u = ureal('Tm1', Tm1, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
 Tm2_u = ureal('Tm2', Tm2, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
 
 % Input tf
-% Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
-% Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
-Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
-Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
+Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
+Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
+% Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
+% Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
 
 % G_u(s) global
 G = G1*blkdiag(Gm1,Gm2);
@@ -175,7 +175,13 @@ S3 = sumblk('y = y1 + n',2);
 P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
 
 %% DK iteration controller
-[K,gamma] = musyn(P,2,2);
 
-%% MU-analysis
-MU_analysis;
+[K,~, ~] = musyn(P,2,2);
+
+%% Mu-analysis
+
+Aux = lft(P,K);
+[N, Delta] = lftdata(Aux);
+rob = robstab(lft(Delta,N));
+gain = robgain(lft(Delta,N), 60);
+% max_mu = mussv(N,Delta.NominalValue);
