@@ -8,6 +8,7 @@ theta = out.theta.Data;
 dz = out.dz.Data;
 dtheta = out.dtheta.Data;
 
+% Reshape if needed
 z = reshape(z,1,size(z,3));
 theta = reshape(theta,1,size(theta,3));
 dz = reshape(dz,1,size(dz,3));
