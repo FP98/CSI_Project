@@ -1,0 +1,64 @@
+%% Script used to analyse data from Simulink simulation
+close all
+
+% Get vector from Simulink
+t = out.tout;
+z = out.z.Data;
+theta = out.theta.Data;
+dz = out.dz.Data;
+dtheta = out.dtheta.Data;
+
+% Find overshoot
+ss_value = z(end);
+overshoot = (max(z) - ss_value)/ss_value;
+
+% Find setting time
+max_value = z(end)*(1 + 0.05);          % Boundary evaluation
+min_value = z(end)*(1 - 0.05);
+
+st_candidates = find(z >= max_value | z <= min_value);       % Setting time candidates
+
+setting_time_index = max(st_candidates);
+setting_time = t(setting_time_index);
+
+% Display value
+disp("Overshoot: ");
+disp(overshoot*100);
+
+disp("Setting time:" );
+disp(setting_time);
+
+% Plot value
+subplot(2,2,1)
+hold on
+plot(t,z, 'k', 'LineWidth',2)
+plot(t,max_value*ones(size(t)), '--b')
+plot(t,min_value*ones(size(t)), '--b')
+plot([setting_time setting_time], [0 z(setting_time_index)], '--b')
+plot(t,max(z)*ones(size(t)), '--k')
+grid on
+title("z")
+xlabel("Time [s]")
+ylabel("Altitude [m]")
+hold off
+
+subplot(2,2,2)
+plot(t,theta, 'k', 'LineWidth',2)
+xlabel("Time [s]")
+title("Motor angle")
+ylabel("\theta [rad]")
+grid on
+
+subplot(2,2,3)
+plot(t,dz, 'k', 'LineWidth',2)
+xlabel("Time [s]")
+ylabel("Vertical speed [m/s]")
+title("dz")
+grid on
+
+subplot(2,2,4)
+plot(t,dtheta, 'k', 'LineWidth',2)
+xlabel("Time [s]")
+ylabel("Motor ang vel [rad/s]")
+title("d\theta")
+grid on

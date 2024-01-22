@@ -124,13 +124,15 @@ else
     G1 = tf(lin_sys);
 end
 
-% Delay definition
+% Delay approximation
 delay1= tf(exp(-T1*s));
 delay2= tf(exp(-T2*s));
-
-% Second order approximation
 sys1 = pade(delay1,2);
-sys2 = pade(delay2,2);  
+sys2 = pade(delay2,2);
+
+% Input transfer function
+Gm1 = sys1*tf(Km1,[Tm1 1]);    
+Gm2 = sys2*tf(Km2,[Tm2 1]);    
 
 % Global plant (input + plant)
 G = G1*blkdiag(Gm1,Gm2);

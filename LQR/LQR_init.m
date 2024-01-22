@@ -127,8 +127,8 @@ m_treshold = 5;
 %% LQR Control
 
 % Weights matrix
-Q_lqr = blkdiag(1000,1000,100,100);     % Status weight
-R_lqr = blkdiag(0.001,1);     % Inputs weight
+Q_lqr = blkdiag(500,1,0.01,0.01);     % Status weight
+R_lqr = blkdiag(5,5);               % Inputs weight
 
 K_lqr = - lqr(A,B,Q_lqr,R_lqr);
 
