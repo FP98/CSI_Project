@@ -1,9 +1,6 @@
 %% Initialization script for CSI simulation
 clear
 clc
-
-CORRECTION = false;
-
 %% Sample time of simulation
 
 out_rate = 0.001;   %[s]
@@ -107,7 +104,6 @@ x_w = [z_w; theta_w; dz_w; dtheta_w];
 
 fm_w = s_param.g*s_param.m;
 fa_w = 0;
-
 %% System representation
 
 % x = [z;theta;dz;dtheta]
@@ -124,40 +120,93 @@ B = [0 0;...
 
 C = [1 0 0 0; 0 1 0 0];
 D = zeros(2,2);
+%% Uncertant model
 
-if CORRECTION
-    % Shift eigenvalue from zero
-    A_c = A - 0.01*eye(size(A));
-    s = tf('s');
-    lin_sys = ss(A_c,B,C,D);
-    G1 = tf(lin_sys);
-else
-    % Nominal plant
-    s = tf('s');
-    lin_sys = ss(A,B,C,D);
-    G1 = tf(lin_sys);
+% Inizialise s
+s = tf('s');
+
+% Uncertant param system
+J = ureal('J', s_param.J, 'PlusMinus', [-std_dev.J, std_dev.J]); 
+m = ureal('m', s_param.m, 'PlusMinus', [-std_dev.m, std_dev.m]);
+b = ureal('b', s_param.b, 'PlusMinus', [-std_dev.b, std_dev.b]);
+beta = ureal('beta', s_param.beta, 'PlusMinus',[-std_dev.beta, std_dev.beta]);
+l = ureal('l', s_param.l, 'PlusMinus',[-std_dev.l, std_dev.l]);
+
+% System tranfer function
+G1 = [1/(s*(b + m*s)) 0;...
+    0 (2*l)/(s*(beta + J*s))];
+
+% Input uncertanties param
+Km1_u = ureal('Km1', Km1, 'PlusMin', [-std_dev_Km, std_dev_Km]); 
+Km2_u = ureal('Km2', Km2, 'PlusMin', [-std_dev_Km, std_dev_Km]);
+T1_u = ureal('T1', T1, 'PlusMin', [-std_dev_T, std_dev_T]);
+T2_u = ureal('T2', T2, 'PlusMin',[-std_dev_T, std_dev_T]);
+Tm1_u = ureal('Tm1', Tm1, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
+Tm2_u = ureal('Tm2', Tm2, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
+
+% Input tf
+Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
+Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
+
+% G_u(s) global
+Gu = G1*blkdiag(Gm1,Gm2);
+G = Gu.NominalValue;
+%% Weights of parametric uncertanity
+
+%lm1
+omega = logspace(-20,0,100);
+bodemag((Gu(1,1)-Gu(1,1).NominalValue)/Gu(1,1).NominalValue);
+hold on 
+grid on
+
+ord = 1;
+
+[freq,resp_dB] = ginput(20);
+
+resp = zeros(1,20);
+for i = 1:20
+    resp(i) = 10^(resp_dB(i)/20);
 end
 
-% Delay approximation
-delay1= tf(exp(-T1*s));
-delay2= tf(exp(-T2*s));
-sys1 = pade(delay1,2);
-sys2 = pade(delay2,2);
+sys = frd(resp,freq);
+W = fitmagfrd(sys,ord);
 
-% Input transfer function
-Gm1 = sys1*tf(Km1,[Tm1 1]);    
-Gm2 = sys2*tf(Km2,[Tm2 1]);    
+f = 1/(1e3*s+1)^2;
+lm1 = tf(W*f);
+bodemag(W,'r-',omega)
+pause(2);
+hold off
 
-% Global plant (input + plant)
-G = G1*blkdiag(Gm1,Gm2);
-ss_global = ss(G); 
+%lm2
+omega = logspace(-20,-0,100);
+bodemag((Gu(2,2)-Gu(2,2).NominalValue)/Gu(2,2).NominalValue);
+hold on 
+grid on
 
+ord = 1;
+
+[freq,resp_dB] = ginput(20);
+
+resp = zeros(1,20);
+for i = 1:20
+    resp(i) = 10^(resp_dB(i)/20);
+end
+
+sys = frd(resp,freq);
+W = fitmagfrd(sys,ord);
+
+lm2 = tf(W*f);
+bodemag(W,'r-',omega)
+hold off
+L = blkdiag(lm1,lm2);
+%% G worst case
+Gwc = G*(eye(2) + L);
 %% Weights definitions
 M = 1.5;
 A_ =1e-4;
-wb = 100; 
+wb = 10; 
 
-% High pass filters
+% Low pass filters
 w1_11 = tf([1/M wb],[1 wb*A_]);
 w1_22 = tf([1/M wb],[1 wb*A_]);
 
@@ -179,32 +228,19 @@ W1.y = 'z1';
 W2.u = 'u';
 W2.y = 'z2';
 
+% Input and output of L
+L.u = 'u';
+L.y = 'ydelta';
 % Sum nodes
 S1 = sumblk('e = r - y',2);
-S2 = sumblk('u1 = u + d',2);
+S2 = sumblk('u1 = u + d + udelta',2);
 S3 = sumblk('y = y1 + n',2);      
 
 % Connect
-P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
+P = connect(G, W1, W2, L, S1, S2, S3, {'udelta','r', 'd', 'n', 'u'}, {'ydelta','z1', 'z2', 'e'});
 
 %% Hyinf syntesis
-if CORRECTION 
-    [K_pre,~, ~] = hinfsyn(P, 2, 2);
-    
-    % Inverse shift
-    K_pre.A = K_pre.A + 0.01*eye(size(K_pre.A));
-    K_non_min = ss(K_pre.A, K_pre.B, K_pre.C, K_pre.D);
-
-    % Min real
-    H = tf(K_non_min);
-    K = ss(H, 'minimal');
-    K = tf(K);
-    Kss = ss(K);
-else
-    opts = hinfsynOptions('Method','RIC');
-    [K,CL, gamma] = hinfsyn(P, 2, 2, opts);
-    Kss = K;                                    % Controller in state space form
-    K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin
-end
-%% MU-analysis
-%MU_analysis;
+opts = hinfsynOptions('Method','RIC');
+[K,CL, gamma] = hinfsyn(P, 2, 2, opts);
+Kss = K;                                    % Controller in state space form
+K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin

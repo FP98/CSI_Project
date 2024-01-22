@@ -54,9 +54,9 @@ s_param.g = 9.81;     % [m/s^2]
 s_param.l = 10;       % [m]
 
 % Standard dev param
-std_dev.J = 35;        % [kgm^2]
-std_dev.m = 10;        % [kg]
-std_dev.b = 1;         % [Ns/m]
+std_dev.J = 350;        % [kgm^2]
+std_dev.m = 300;        % [kg]
+std_dev.b = 10;         % [Ns/m]
 std_dev.beta = 2;       % [m/s^2]
 std_dev.l = 0.2;        % [m]
 
