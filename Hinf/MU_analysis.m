@@ -64,7 +64,6 @@ M = N(1:szDelta(2),1:szDelta(1));
 omega = logspace(-3, 3, 61);
 Mfr = frd(M, omega);
 %% mussv
-blk = [-11 0];
 [mubnds, muinfo] = mussv(Mfr, BlkStruct);
 muRP = mubnds(:,1);
 [muRPinf,muRPw] = norm(muRP,inf);
@@ -72,7 +71,10 @@ muRP = mubnds(:,1);
 bodemag(muRP); 
 grid on
 
-%% Rob stab
+%% Rob stab & Rob gain
 usys= lft(Delta, N);
-[stabmarg,wcu] = robstab(usys);
-[perfmarg] = robgain(usys,gamma);
+[stabmarg,wcu_stab] = robstab(usys);
+[perfmarg,wcu_perf] = robgain(usys,gamma);
+
+wcsys = usubs(usys, wcu_perf);
+pole(wcsys)

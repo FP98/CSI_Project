@@ -1,9 +1,6 @@
 %% Initialization script for CSI simulation
 clear
 clc
-
-CORRECTION = false;
-
 %% Sample time of simulation
 
 out_rate = 0.001;   %[s]
@@ -57,9 +54,9 @@ s_param.g = 9.81;     % [m/s^2]
 s_param.l = 10;       % [m]
 
 % Standard dev param
-std_dev.J = 350;        % [kgm^2]
-std_dev.m = 50;        % [kg]
-std_dev.b = 10;         % [Ns/m]
+std_dev.J = 35;        % [kgm^2]
+std_dev.m = 10;        % [kg]
+std_dev.b = 1;         % [Ns/m]
 std_dev.beta = 2;       % [m/s^2]
 std_dev.l = 0.2;        % [m]
 
@@ -107,7 +104,6 @@ x_w = [z_w; theta_w; dz_w; dtheta_w];
 
 fm_w = s_param.g*s_param.m;
 fa_w = 0;
-
 %% System representation
 
 % x = [z;theta;dz;dtheta]
@@ -124,46 +120,49 @@ B = [0 0;...
 
 C = [1 0 0 0; 0 1 0 0];
 D = zeros(2,2);
+%% Uncertant model
 
-if CORRECTION
-    % Shift eigenvalue from zero
-    A_c = A - 0.01*eye(size(A));
-    s = tf('s');
-    lin_sys = ss(A_c,B,C,D);
-    G1 = tf(lin_sys);
-else
-    % Nominal plant
-    s = tf('s');
-    lin_sys = ss(A,B,C,D);
-    G1 = tf(lin_sys);
-end
+% Inizialise s
+s = tf('s');
 
-% Delay approximation
-delay1= tf(exp(-T1*s));
-delay2= tf(exp(-T2*s));
-sys1 = pade(delay1,2);
-sys2 = pade(delay2,2);
+% Uncertant param system
+J = ureal('J', s_param.J, 'PlusMinus', [-std_dev.J, std_dev.J]); 
+m = ureal('m', s_param.m, 'PlusMinus', [-std_dev.m, std_dev.m]);
+b = ureal('b', s_param.b, 'PlusMinus', [-std_dev.b, std_dev.b]);
+beta = ureal('beta', s_param.beta, 'PlusMinus',[-std_dev.beta, std_dev.beta]);
+l = ureal('l', s_param.l, 'PlusMinus',[-std_dev.l, std_dev.l]);
 
-% Input transfer function
-Gm1 = sys1*tf(Km1,[Tm1 1]);    
-Gm2 = sys2*tf(Km2,[Tm2 1]);    
+% System tranfer function
+G1 = [1/(s*(b + m*s)) 0;...
+    0 (2*l)/(s*(beta + J*s))];
 
-% Global plant (input + plant)
+% Input uncertanties param
+Km1_u = ureal('Km1', Km1, 'PlusMin', [-std_dev_Km, std_dev_Km]); 
+Km2_u = ureal('Km2', Km2, 'PlusMin', [-std_dev_Km, std_dev_Km]);
+T1_u = ureal('T1', T1, 'PlusMin', [-std_dev_T, std_dev_T]);
+T2_u = ureal('T2', T2, 'PlusMin',[-std_dev_T, std_dev_T]);
+Tm1_u = ureal('Tm1', Tm1, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
+Tm2_u = ureal('Tm2', Tm2, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
+
+% Input tf
+Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
+Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
+
+% G_u(s) global
 G = G1*blkdiag(Gm1,Gm2);
-ss_global = ss(G); 
 
 %% Weights definitions
 M = 1.5;
-A_ =1e-4;
-wb = 100; 
+A_ =1e-6;
+wb = 10; 
 
-% High pass filters
+% Low pass filters
 w1_11 = tf([1/M wb],[1 wb*A_]);
 w1_22 = tf([1/M wb],[1 wb*A_]);
 
 % Weight matrix
 W1 = blkdiag(w1_11,w1_22);
-W2 = blkdiag(tf(0.01), tf(0.01));
+W2 = blkdiag(tf(0.1), tf(0.1));
 
 %% Connect P-K
 
@@ -185,26 +184,35 @@ S2 = sumblk('u1 = u + d',2);
 S3 = sumblk('y = y1 + n',2);      
 
 % Connect
-P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
-
+Pu = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});   % P with uncertenities
+[P,Delta,BlkStruct] = lftdata(Pu);                                                        % P without uncertenities
 %% Hyinf syntesis
-if CORRECTION 
-    [K_pre,~, ~] = hinfsyn(P, 2, 2);
-    
-    % Inverse shift
-    K_pre.A = K_pre.A + 0.01*eye(size(K_pre.A));
-    K_non_min = ss(K_pre.A, K_pre.B, K_pre.C, K_pre.D);
+opts = hinfsynOptions('Method','RIC');
 
-    % Min real
-    H = tf(K_non_min);
-    K = ss(H, 'minimal');
-    K = tf(K);
-    Kss = ss(K);
-else
-    opts = hinfsynOptions('Method','RIC');
-    [K,CL, gamma] = hinfsyn(P, 2, 2, opts);
-    Kss = K;                                    % Controller in state space form
-    K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin
-end
+[K,CL, gamma] = hinfsyn(Pu, 2, 2, opts);
+Kss = K;                                    % Controller in state space form
+K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin
 %% MU-analysis
-MU_analysis;
+
+% N, F, M definition
+N = lft(P,K);
+F = lft(Delta,N);
+szDelta = size(Delta);
+M = N(1:szDelta(2),1:szDelta(1));
+omega = logspace(-3, 3, 61);
+Mfr = frd(M, omega);
+
+% mussv
+[mubnds, muinfo] = mussv(Mfr, BlkStruct);
+muRP = mubnds(:,1);
+[muRPinf,muRPw] = norm(muRP,inf);
+
+bodemag(muRP); 
+grid on
+
+% Rob stab & Rob gain
+usys= lft(Delta, N);
+[stabmarg,wcu_stab] = robstab(usys);
+[perfmarg,wcu_perf] = robgain(usys,gamma);
+wcsys = usubs(usys,wcu_perf);  
+%MU_analysis;
