@@ -46,14 +46,22 @@ dtheta_0_real = dtheta_0+std_dev.dtheta_0*rand(1,1);
 
 x_0_real = [z_0_real; theta_0_real; dz_0_real; dtheta_0_real];
 
-%% Ideal System params
+%% System params
 
+% Ideal param
 s_param.J = 5000;     % [kgm^2]
 s_param.m = 2000;     % [kg]
 s_param.b = 150;      % [Ns/m]
 s_param.beta = 15;    % [Nms/rad]
 s_param.g = 9.81;     % [m/s^2]
 s_param.l = 10;       % [m]
+
+% Standard dev param
+std_dev.J = 350;        % [kgm^2]
+std_dev.m = 300;        % [kg]
+std_dev.b = 10;         % [Ns/m]
+std_dev.beta = 2;       % [m/s^2]
+std_dev.l = 0.2;        % [m]
 
 %% Input parameters
 
@@ -192,3 +200,5 @@ else
     Kss = K;                                    % Controller in state space form
     K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin
 end
+%% MU-analysis
+MU_analysis;
