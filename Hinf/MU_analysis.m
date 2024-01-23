@@ -77,4 +77,3 @@ usys= lft(Delta, N);
 [perfmarg,wcu_perf] = robgain(usys,gamma);
 
 wcsys = usubs(usys, wcu_perf);
-pole(wcsys)

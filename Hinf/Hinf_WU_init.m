@@ -152,52 +152,13 @@ Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
 Gu = G1*blkdiag(Gm1,Gm2);
 G = Gu.NominalValue;
 %% Weights of parametric uncertanity
+% f = 1/(1e3*s+1)^2;
+% WU_computation;
+lm1 = tf([0 0 9.1135e-07 6.2827e-15],[1 0.0020 1.0000e-06 3.4728e-16]); % actuators 0.01 gamma 200
+lm2 = tf([0 0 1.4226e-06 2.6489e-19],[1 0.0020 1.0000e-06 2.6472e-21]);
 
-%lm1
-omega = logspace(-20,0,100);
-bodemag((Gu(1,1)-Gu(1,1).NominalValue)/Gu(1,1).NominalValue);
-hold on 
-grid on
-
-ord = 1;
-
-[freq,resp_dB] = ginput(20);
-
-resp = zeros(1,20);
-for i = 1:20
-    resp(i) = 10^(resp_dB(i)/20);
-end
-
-sys = frd(resp,freq);
-W = fitmagfrd(sys,ord);
-
-f = 1/(1e3*s+1)^2;
-lm1 = tf(W*f);
-bodemag(W,'r-',omega)
-pause(2);
-hold off
-
-%lm2
-omega = logspace(-20,-0,100);
-bodemag((Gu(2,2)-Gu(2,2).NominalValue)/Gu(2,2).NominalValue);
-hold on 
-grid on
-
-ord = 1;
-
-[freq,resp_dB] = ginput(20);
-
-resp = zeros(1,20);
-for i = 1:20
-    resp(i) = 10^(resp_dB(i)/20);
-end
-
-sys = frd(resp,freq);
-W = fitmagfrd(sys,ord);
-
-lm2 = tf(W*f);
-bodemag(W,'r-',omega)
-hold off
+% lm1 = tf([0 0 5.3347e-07 1.1820e-15],[1 0.0020 1.0000e-06 5.2517e-17]); %actuators 0.01 gamma 104
+% lm2 = tf([0 0 4.1362e-07 1.3081e-17],[1 0.0020 1.0000e-06 4.2159e-19]);
 L = blkdiag(lm1,lm2);
 %% G worst case
 Gwc = G*(eye(2) + L);
