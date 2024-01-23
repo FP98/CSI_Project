@@ -8,18 +8,15 @@ CORRECTION = false;
 
 out_rate = 0.001;   %[s]
 
-%% Sensors carateristics
-
-% Sampling times
-Ts.y1 = 0.03;       %[s]
-Ts.y2 = 0.04;       %[s]
+%% Noise carateristics
 
 % Std deviation
 std_dev.y1 = 0.07;      %[m]
 std_dev.y2 = 0.09;      %[rad]
 
-% Sensors covariance R
-R = blkdiag(std_dev.y1^2, std_dev.y2^2);
+% Range frequency 
+omega_y1 = 1e3;         %[rad/s]
+omega_y2 = 1e3;         %[rad/s]
 
 %% Initial conditions
 
@@ -69,11 +66,18 @@ s_param_r.m = s_param.m + std_dev.m*randn(1,1);
 s_param_r.b = s_param.b + std_dev.b*randn(1,1);
 s_param_r.beta= s_param.beta + std_dev.beta*randn(1,1);
 s_param_r.l = s_param.l + std_dev.l*randn(1,1);
+
+%% Process disturbe carateristics
+% Std deviation
+std_dev.fm = 500;       % [N] fm standard deviation
+std_dev.fa = 10;        % [N] fa standard deviation 
+
+% Range frequency
+omega_d1 = 1;           % [rad/s]
+omega_d2 = 1;           % [rad/s]
+
+
 %% Input parameters
-
-std_dev.fm = 500;                           % fm standard deviation
-std_dev.fa = 10;                             % fa standard deviation 
-
 % Ideal parameters of the actuators transfer functions
 Km1 = 1.1;      % [N] Gain fm
 Km2 = 1.1;      % [N] Gain fa
@@ -153,17 +157,24 @@ G = G1*blkdiag(Gm1,Gm2);
 ss_global = ss(G); 
 
 %% Weights definitions
-M = 1.5;
-A_ =1e-4;
-wb = 100; 
+M1 = 1.5;
+A1_ =1e-4;
+wb1 = 150; 
 
-% High pass filters
-w1_11 = tf([1/M wb],[1 wb*A_]);
-w1_22 = tf([1/M wb],[1 wb*A_]);
+M2 = 500;
+A2_ =1e2;
+wb2 = 0.5; 
+
+% Low pass filter
+wd = tf([1/M1 wb1],[1 wb1*A1_]);
+
+% High pass filter
+wn = tf([1 wb2*A2_],[1/M2 wb2]);
 
 % Weight matrix
-W1 = blkdiag(w1_11,w1_22);
+W1 = blkdiag(wd,wd);
 W2 = blkdiag(tf(0.01), tf(0.01));
+W3 = blkdiag(wn,wn);
 
 %% Connect P-K
 
@@ -179,13 +190,17 @@ W1.y = 'z1';
 W2.u = 'u';
 W2.y = 'z2';
 
+% Input and output of W3
+W3.u = 'y';
+W3.y = 'z3';
+
 % Sum nodes
 S1 = sumblk('e = r - y',2);
 S2 = sumblk('u1 = u + d',2);
 S3 = sumblk('y = y1 + n',2);      
 
 % Connect
-P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
+P = connect(G, W1, W2, W3, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'z3', 'e'});
 
 %% Hyinf syntesis
 if CORRECTION 

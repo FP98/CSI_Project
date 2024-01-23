@@ -5,18 +5,15 @@ clc
 
 out_rate = 0.001;   %[s]
 
-%% Sensors carateristics
-
-% Sampling times
-Ts.y1 = 0.03;       %[s]
-Ts.y2 = 0.04;       %[s]
+%% Noise carateristics
 
 % Std deviation
 std_dev.y1 = 0.07;      %[m]
 std_dev.y2 = 0.09;      %[rad]
 
-% Sensors covariance R
-R = blkdiag(std_dev.y1^2, std_dev.y2^2);
+% Range frequency 
+omega_y1 = 1e3;         %[rad/s]
+omega_y2 = 1e3;         %[rad/s]
 
 %% Initial conditions
 
@@ -152,10 +149,10 @@ Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
 Gu = G1*blkdiag(Gm1,Gm2);
 G = Gu.NominalValue;
 %% Weights of parametric uncertanity
-% f = 1/(1e3*s+1)^2;
-% WU_computation;
-lm1 = tf([0 0 9.1135e-07 6.2827e-15],[1 0.0020 1.0000e-06 3.4728e-16]); % actuators 0.01 gamma 200
-lm2 = tf([0 0 1.4226e-06 2.6489e-19],[1 0.0020 1.0000e-06 2.6472e-21]);
+f = 1/(1e3*s+1)^2;
+WU_computation;
+% lm1 = tf([0 0 9.1135e-07 6.2827e-15],[1 0.0020 1.0000e-06 3.4728e-16]); % actuators 0.01 gamma 200
+% lm2 = tf([0 0 1.4226e-06 2.6489e-19],[1 0.0020 1.0000e-06 2.6472e-21]);
 
 % lm1 = tf([0 0 5.3347e-07 1.1820e-15],[1 0.0020 1.0000e-06 5.2517e-17]); %actuators 0.01 gamma 104
 % lm2 = tf([0 0 4.1362e-07 1.3081e-17],[1 0.0020 1.0000e-06 4.2159e-19]);
@@ -163,18 +160,24 @@ L = blkdiag(lm1,lm2);
 %% G worst case
 Gwc = G*(eye(2) + L);
 %% Weights definitions
-M = 1.5;
-A_ =1e-4;
-wb = 10; 
+M1 = 1.5;
+A1_ =1e-4;
+wb1 = 150; 
 
-% Low pass filters
-w1_11 = tf([1/M wb],[1 wb*A_]);
-w1_22 = tf([1/M wb],[1 wb*A_]);
+M2 = 500;
+A2_ =1e2;
+wb2 = 0.5; 
+
+% Low pass filter
+wd = tf([1/M1 wb1],[1 wb1*A1_]);
+
+% High pass filter
+wn = tf([1 wb2*A2_],[1/M2 wb2]);
 
 % Weight matrix
-W1 = blkdiag(w1_11,w1_22);
+W1 = blkdiag(wd,wd);
 W2 = blkdiag(tf(0.01), tf(0.01));
-
+W3 = blkdiag(wn,wn);
 %% Connect P-K
 
 % Input and output of G
@@ -189,6 +192,10 @@ W1.y = 'z1';
 W2.u = 'u';
 W2.y = 'z2';
 
+% Input and output of W3
+W3.u = 'y';
+W3.y = 'z3';
+
 % Input and output of L
 L.u = 'u';
 L.y = 'ydelta';
@@ -198,7 +205,7 @@ S2 = sumblk('u1 = u + d + udelta',2);
 S3 = sumblk('y = y1 + n',2);      
 
 % Connect
-P = connect(G, W1, W2, L, S1, S2, S3, {'udelta','r', 'd', 'n', 'u'}, {'ydelta','z1', 'z2', 'e'});
+P = connect(G, W1, W2, W3, L, S1, S2, S3, {'udelta', 'r', 'd', 'n', 'u'}, {'ydelta', 'z1', 'z2', 'z3', 'e'});
 
 %% Hyinf syntesis
 opts = hinfsynOptions('Method','RIC');
