@@ -58,7 +58,7 @@ F = lft(P,K);
 %% M definition
 szDelta = size(Delta);
 M = N(1:szDelta(2),1:szDelta(1));
-omega = logspace(-3, 3, 61);
+omega = logspace(-3, 3, 100);
 Mfr = frd(M, omega);
 %% mussv
 [mubnds, muinfo] = mussv(Mfr, BlkStruct);
