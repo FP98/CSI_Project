@@ -170,7 +170,7 @@ grid on
 
 % Weight matrix
 W1 = blkdiag(w1_11, w1_22);
-W2 = blkdiag(tf(0.001), tf(0.001));
+W2 = blkdiag(tf(0.1), tf(0.1));
 
 %% Connect P-K
 
