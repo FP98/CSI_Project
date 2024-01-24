@@ -85,6 +85,13 @@ Tm2 = 1;        % [s]
 std_dev_Km = 0.01;      % [N]
 std_dev_T = 0.01;       % [s]
 std_dev_Tm = 0.01;      % [s]
+% Real parameters of the actuators transfer functions
+Km1_real = Km1 + std_dev_Km*randn(1,1);     % [N] Gain fm
+Km2_real = Km2 + std_dev_Km*randn(1,1);     % [N] Gain fa
+T1_real = T1 + std_dev_T*randn(1,1);        % [s] Delay fm
+T2_real = T2 + std_dev_T*randn(1,1);        % [s] Delay fa
+Tm1_real = Tm1 + std_dev_Tm*randn(1,1);     % [s] Time constant fm
+Tm2_real = Tm2 + std_dev_Tm*randn(1,1);     % [s] Time constant fa
 
 %% Linear sys
 
@@ -163,7 +170,7 @@ grid on
 
 % Weight matrix
 W1 = blkdiag(w1_11, w1_22);
-W2 = blkdiag(tf(0.1), tf(0.1));
+W2 = blkdiag(tf(0.001), tf(0.001));
 
 %% Connect P-K
 
