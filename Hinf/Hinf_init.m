@@ -218,8 +218,7 @@ if CORRECTION
 else
     opts = hinfsynOptions('Method','RIC');
     [K,CL, gamma] = hinfsyn(P, 2, 2, opts);
-    Kss = K;                                    % Controller in state space form
-    K = tf(ss(K.A,K.B,K.C,K.D));                % Controller in Laplace domanin
+   
 end
 %% MU-analysis
 %MU_analysis;
