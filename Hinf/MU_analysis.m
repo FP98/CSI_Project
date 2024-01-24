@@ -13,8 +13,7 @@ beta = ureal('beta', s_param.beta, 'PlusMinus',[-std_dev.beta, std_dev.beta]);
 l = ureal('l', s_param.l, 'PlusMinus',[-std_dev.l, std_dev.l]);
 
 % System tranfer function
-G1 = [1/(s*(b + m*s)) 0;...
-    0 (2*l)/(s*(beta + J*s))];
+G1 = [1/(s*(b + m*s)) 0; 0 (2*l)/(s*(beta + J*s))];
 
 % Input uncertanties param
 Km1_u = ureal('Km1', Km1, 'PlusMin', [-std_dev_Km, std_dev_Km]); 
@@ -27,10 +26,8 @@ Tm2_u = ureal('Tm2', Tm2, 'PlusMin',[-std_dev_Tm, std_dev_Tm]);
 % Input tf
 Gm1 = Km1_u*(1/(T1_u/2*s+1))*(1/(Tm1_u*s+1));
 Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
-% Gm1 = Km1*(1/(T1/2*s+1))*(1/(Tm1*s+1));
-% Gm2 = Km2*(1/(T2/2*s+1))*(1/(Tm2*s+1));
 
-% G_u(s) global
+% G global
 G = G1*blkdiag(Gm1,Gm2);
 
 %% Connect Uncertain P-K
