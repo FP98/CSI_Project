@@ -57,9 +57,16 @@ s_param.l = 10;       % [m]
 % Standard dev param
 std_dev.J = 350;        % [kgm^2]
 std_dev.m = 300;        % [kg]
-std_dev.b = 10;         % [Ns/m]
-std_dev.beta = 2;       % [m/s^2]
+std_dev.b = 1;         % [Ns/m]
+std_dev.beta = 0.5;       % [m/s^2]
 std_dev.l = 0.2;        % [m]
+
+% Real params
+s_param_r.J = s_param.J + std_dev.J*randn(1,1);
+s_param_r.m = s_param.m + std_dev.m*randn(1,1);
+s_param_r.b = s_param.b + std_dev.b*randn(1,1);
+s_param_r.beta= s_param.beta + std_dev.beta*randn(1,1);
+s_param_r.l = s_param.l + std_dev.l*randn(1,1);
 
 %% Input parameters
 
@@ -140,16 +147,22 @@ Gm2 = Km2_u*(1/(T2_u/2*s+1))*(1/(Tm2_u*s+1));
 G = G1*blkdiag(Gm1,Gm2);
 
 %% Weights definitions
-M = 1.5;
-A_ =1e-4;
-wb = 10; 
+M = 10;
+A_ = 0.5;
+wb = .01;    %
 
-% High pass filters
+% M = 10;           0.691
+% A_ = 0.5;
+% wb = .01; 
+
+% Low pass filters
 w1_11 = tf([1/M wb],[1 wb*A_]);
 w1_22 = tf([1/M wb],[1 wb*A_]);
+bode(1/w1_11)
+grid on
 
 % Weight matrix
-W1 = blkdiag(w1_11,w1_22);
+W1 = blkdiag(w1_11, w1_22);
 W2 = blkdiag(tf(0.1), tf(0.1));
 
 %% Connect P-K
@@ -176,12 +189,12 @@ P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
 
 %% DK iteration controller
 
-[K,~, ~] = musyn(P,2,2);
+[K,gamma, ~] = musyn(P,2,2);
 
 %% Mu-analysis
 
 Aux = lft(P,K);
 [N, Delta] = lftdata(Aux);
 rob = robstab(lft(Delta,N));
-gain = robgain(lft(Delta,N), 60);
+% gain = robgain(lft(Delta,N), gamma);
 % max_mu = mussv(N,Delta.NominalValue);
