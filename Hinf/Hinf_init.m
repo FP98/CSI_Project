@@ -157,13 +157,13 @@ G = G1*blkdiag(Gm1,Gm2);
 ss_global = ss(G); 
 
 %% Weights definitions
-M1 = 1.5;
-A1_ =1e-4;
-wb1 = 150; 
+M1 = 15e3;
+A1_ = 1;
+wb1 = 15e-3; 
 
-M2 = 500;
-A2_ =1e2;
-wb2 = 0.5; 
+M2 = 0.5;
+A2_ =0.1;
+wb2 = 500; 
 
 % Low pass filter
 wd = tf([1/M1 wb1],[1 wb1*A1_]);
@@ -173,7 +173,7 @@ wn = tf([1 wb2*A2_],[1/M2 wb2]);
 
 % Weight matrix
 W1 = blkdiag(wd,wd);
-W2 = blkdiag(tf(0.01), tf(0.01));
+W2 = blkdiag(tf(1e-6), tf(1e-6));
 W3 = blkdiag(wn,wn);
 
 %% Connect P-K
