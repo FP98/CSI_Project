@@ -27,12 +27,24 @@ st_candidates = find(z >= max_value | z <= min_value);       % Setting time cand
 setting_time_index = max(st_candidates);
 setting_time = t(setting_time_index);
 
+% Find final error
+e = abs(z_w - z(end)); 
+
+% Find relative error
+er = (z_w - (z_w - e))/z_w;
+
 % Display value
 disp("Overshoot: ");
 disp(overshoot*100);
 
 disp("Setting time:" );
 disp(setting_time);
+
+disp("Final error");
+disp(e)
+
+disp("Relative errorr");
+disp(er*100);
 
 % Plot value
 subplot(2,2,1)
