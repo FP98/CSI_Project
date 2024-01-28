@@ -208,8 +208,21 @@ P = connect(G, W1, W2, W3, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'z3', 
 
 %% Mu-analysis
 
-Aux = lft(P,K);
-[N, Delta] = lftdata(Aux);
+% Global plant
+F = lft(P.NominalValue,K);
+
+% N - Delta matrix
+[N, Delta] = lftdata(F);
+
+% State space rapresentation of N
+N_ss = ss(N);
+
+% Plot eigenvalue
+reale = real(eig(N_ss.A));
+img = imag(eig(N_ss.A));
+
+scatter(reale,img);
+
 rob = robstab(lft(Delta,N));
 perfmarg = robgain(lft(Delta,N), gamma);
 % max_mu = mussv(N,Delta.NominalValue);

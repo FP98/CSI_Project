@@ -1,5 +1,3 @@
-% MU-analysis
-
 %% Uncertant model
 
 % Inizialise s
@@ -51,16 +49,21 @@ S3 = sumblk('y = y1 + n',2);
 
 % Connect
 P = connect(G, W1, W2, S1, S2, S3, {'r', 'd', 'n', 'u'}, {'z1', 'z2', 'e'});
+
 %% N & Delta definition
+
 F = lft(P,K);
 [N,Delta,BlkStruct] = lftdata(F);
 
 %% M definition
+
 szDelta = size(Delta);
 M = N(1:szDelta(2),1:szDelta(1));
 omega = logspace(-3, 3, 100);
 Mfr = frd(M, omega);
+
 %% mussv
+
 [mubnds, muinfo] = mussv(Mfr, BlkStruct);
 muRP = mubnds(:,1);
 [muRPinf,muRPw] = norm(muRP,inf);
@@ -69,6 +72,7 @@ bodemag(muRP);
 grid on
 
 %% Rob stab & Rob gain
+
 usys= lft(Delta, N);
 [stabmarg,wcu_stab] = robstab(usys);
 [perfmarg,wcu_perf] = robgain(usys,gamma);
